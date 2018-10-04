@@ -11,6 +11,10 @@
   notify: restart gogs
   when: gogs_webhook_skip_tls_verify|bool
 
+- name: Pause for prior action to complete
+  pause:
+    seconds: 5
+
 - name: Run gogs Config with admin user creation
   uri:
     url: http://{{ ansible_hostname }}:3000/install
