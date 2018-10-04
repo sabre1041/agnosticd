@@ -17,5 +17,5 @@
     value: "true"
     owner: "{{ gogs_user }}"
     group: "{{ gogs_user }}"
-  notify: restart gogs
+  #notify: restart gogs
   when: gogs_webhook_skip_tls_verify|bool
