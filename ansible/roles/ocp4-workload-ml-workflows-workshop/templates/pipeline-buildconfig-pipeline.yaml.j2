@@ -1,0 +1,65 @@
+kind: "BuildConfig"
+apiVersion: "v1"
+metadata:
+  name: pipeline-jenkins
+spec:
+  source:
+    git:
+      uri: {{ pipeline_notebook_repository }}
+      ref: {{ pipeline_notebook_repository_ref }}
+  strategy:
+    jenkinsPipelineStrategy:
+      jenkinsfile: |-
+        openshift.withCluster() {
+            env.localToken = readFile('/var/run/secrets/kubernetes.io/serviceaccount/token').trim()
+            env.NAMESPACE = openshift.project()
+        }
+
+        pipeline {
+          agent {
+            label 'maven'
+          }
+
+          stages {
+            stage ('Fetch Source Code') {
+              steps {
+                git url: "${SOURCE_REPOSITORY_URL}", branch: "${SOURCE_REPOSITORY_REF}"
+              }
+            }
+
+            stage('Build Image'){
+              steps {
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject() {
+                      openshift.selector("bc", "${PIPELINE_APPLICATION_NAME}").startBuild("--from-dir=${SOURCE_CONTEXT_DIR}").logs("-f")
+                    }
+                  }
+                }
+              }
+            }
+
+            stage ('Verify Deployment') {
+              steps {
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject() {
+                      def dc = openshift.selector('dc', "${PIPELINE_APPLICATION_NAME}")
+                    }
+                  }
+                }
+              }
+            }
+          } 
+        }
+      env:
+        - name: PIPELINE_APPLICATION_NAME
+          value: "{{ pipeline_application_name }}"
+        - name: SOURCE_REPOSITORY_URL
+          value: "{{ pipeline_notebook_repository }}"
+        - name: SOURCE_REPOSITORY_REF
+          value: "{{ pipeline_notebook_repository_ref }}"
+        - name: SOURCE_CONTEXT_DIR
+          value: "{{ pipeline_notebook_repository_contextdir }}"
+    triggers:
+      - type: ConfigChange

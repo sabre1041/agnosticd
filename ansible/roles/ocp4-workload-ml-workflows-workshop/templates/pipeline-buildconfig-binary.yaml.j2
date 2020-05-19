@@ -1,0 +1,34 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    scrapeModelMetrics: "yes"
+  name: pipeline
+spec:
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: pipeline:latest
+  postCommit: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 3Gi
+    requests:
+      cpu: 50m
+      memory: 256Mi
+  source:
+    contextDir: "{{ pipeline_notebook_repository_contextdir }}"
+    binary: {}
+    type: Binary
+  strategy:
+    sourceStrategy:
+      env:
+      - name: S2I_SOURCE_NOTEBOOK_LIST
+        value: {{ pipeline_notebook_list }}
+      from:
+        kind: ImageStreamTag
+        name: simple-model-s2i:latest
+        namespace: {{ t_project_name }}
+    type: Source

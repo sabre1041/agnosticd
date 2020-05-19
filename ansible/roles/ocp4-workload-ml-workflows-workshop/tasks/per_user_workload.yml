@@ -23,7 +23,7 @@
     - pipeline-buildconfig.yaml.j2
     - pipeline-deploymentconfig.yaml.j2
     - pipeline-service.yaml.j2
-  when: use_openshift_build
+  when: openshihft_build_strategy == 'openshift_native'
 
 - name: Create OpenShift Pipeline in {{ t_project_name }}
   k8s:
@@ -36,9 +36,30 @@
     - pipeline-resource-image.yaml.j2
     - pipeline-task-definition.yaml.j2
     - pipeline-definition.yaml.j2
-  when: use_openshift_pipelines
+  when: openshihft_build_strategy == 'pipelines'
   vars:
     namespace: "{{ t_project_name }}"
+
+- name: Create Jenkins pipeline resources
+  block:
+    - name: Deploy Jenkins Persistent
+      shell: "oc process openshift//jenkins-persistent -n {{ t_project_name }}| oc apply -f- -n {{ t_project_name }} "
+      ignore_errors: true
+
+    - name: Create the project resources in {{ t_project_name }}
+      k8s:
+        state: present
+        namespace: "{{ t_project_name }}"
+        definition: "{{ lookup('template', item) }}"
+      loop:
+        - custom-notebook-imagestream.yaml.j2
+        - pipeline-s2i-imagestream.yaml.j2
+        - pipeline-imagestream.yaml.j2
+        - pipeline-buildconfig-binary.yaml.j2
+        - pipeline-buildconfig-pipeline.yaml.j2
+        - pipeline-deploymentconfig.yaml.j2
+        - pipeline-service.yaml.j2
+  when: openshihft_build_strategy == 'jenkins'
 
 - name: Wait for jupyterhub DeploymentConfig
   k8s_info:

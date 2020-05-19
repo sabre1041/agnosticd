@@ -8,9 +8,15 @@ user_count_start: 1
 
 instructor_mode: false
 
-use_openshift_build: false
-use_openshift_pipelines: true
+# Strategy to build and deploy
+## openshift_native
+## pipelines
+## jenkins
+openshihft_build_strategy: pipelines
 
 pipeline_builder_image: quay.io/willbenton/simple-model-s2i:summit-2020
 pipeline_notebook_repository: https://github.com/willb/fraud-notebooks
+pipeline_notebook_repository_ref: develop
+pipeline_notebook_repository_contextdir: "."
 pipeline_notebook_list: 02-feature-engineering.ipynb,03-model-logistic-regression.ipynb
+pipeline_application_name: pipeline
